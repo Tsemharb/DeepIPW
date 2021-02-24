@@ -49,16 +49,24 @@ def drug_is_taken_in_baseline(index_date, dates):
 def pre_user_cohort_rx_v2(cad_prescription_taken_by_patient, cad_patient_take_prescription, min_patients):
     cad_user_cohort_rx = AutoVivification()
 
+    # for each drug taken by patients
     for drug, taken_by_patient in tqdm(cad_prescription_taken_by_patient.items()):
+        # only if number of patients taken that drug is >= min_patients
         if len(taken_by_patient.keys()) >= min_patients:
+            # for each patient for that drug
             for patient, take_dates in taken_by_patient.items():
+                #  first day the drug is taken
                 index_date = take_dates[0]
+                # get all drugs for that patient
                 patient_prescription_list = cad_patient_take_prescription.get(patient)
+                # for each drug (prescription) and prescription dates for that patient
                 for prescription, dates_days in patient_prescription_list.items():
                     # dates = [datetime.strptime(date, '%m/%d/%Y') for date, days in dates_days]
                     dates = sorted(dates_days)
+                    # for the drug (prescription) get dates where drug is taken before index_date
                     dates = drug_is_taken_in_baseline_v2(index_date, dates)
                     if dates:
+                        # for each date
                         for date in dates:
                             if drug not in cad_user_cohort_rx:
                                 cad_user_cohort_rx[drug][patient][date] = [prescription]

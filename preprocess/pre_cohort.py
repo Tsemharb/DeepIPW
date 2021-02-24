@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import  datetime
+from datetime import datetime
 import pickle
 
 
@@ -38,12 +38,13 @@ def exclude(cad_prescription_taken_by_patient, patient_1stDX_date, patient_start
             dates = sorted(dates)
             dates_days = {datetime.strptime(date, '%m/%d/%Y'): int(days) for (date, days) in take_times if
                           date and days}
-            DX = patient_1stDX_date.get(patient, datetime.max)
-            index_date = dates[0]
-            start_date = patient_start_date.get(patient, datetime.max)
-            if criteria_1_is_valid(index_date, DX) and criteria_2_is_valid(dates, interval, followup,
-                                                                           dates_days) and criteria_3_is_valid(
-                    index_date, start_date, baseline):
+            DX = patient_1stDX_date.get(patient, datetime.max)  # diagnosis date
+            index_date = dates[0]  # first day of prescription
+            start_date = patient_start_date.get(patient, datetime.max)  # enrollment start day
+            # if criteria_1_is_valid(index_date, DX) \
+            #         and criteria_2_is_valid(dates, interval, followup, dates_days) \
+            #         and criteria_3_is_valid(index_date, start_date, baseline):
+            if True:
                 cad_prescription_taken_by_patient_exclude[drug][patient] = dates
                 cad_patient_take_prescription_exclude[patient][drug] = dates
 

@@ -13,12 +13,14 @@ import pickle
 
 def parse_args():
     parser = argparse.ArgumentParser(description='process parameters')
-    parser.add_argument('--min_patients', default=500, type=int,help='minimum number of patients for each cohort.')
+    # parser.add_argument('--min_patients', default=500, type=int,help='minimum number of patients for each cohort.')
+    parser.add_argument('--min_patients', default=2, type=int,help='minimum number of patients for each cohort.')
     parser.add_argument('--min_prescription', default=2, type=int,help='minimum times of prescriptions of each drug.')
     parser.add_argument('--time_interval', default=30, type=int,help='minimum time interval for every two prescriptions')
     parser.add_argument('--followup', default=730, type=int, help='number of days of followup period')
     parser.add_argument('--baseline', default=365, type=int, help='number of days of baseline period')
-    parser.add_argument('--input_data', default='../data/CAD')
+    # parser.add_argument('--input_data', default='../data/CAD')
+    parser.add_argument('--input_data', default='../data/synthetic')
     parser.add_argument('--pickles', default='pickles')
     parser.add_argument('--outcome_icd9', default='outcome_icd9.txt', help='outcome definition with ICD-9 codes')
     parser.add_argument('--outcome_icd10', default='outcome_icd10.txt', help='outcome definition with ICD-10 codes')
@@ -40,22 +42,37 @@ def get_patient_list(min_patient, cad_prescription_taken_by_patient):
 def main(args):
 
     print('Loading prescription data...')
+
+    # default_dict of drugs of format {drug_id: {patient_id:{(date, num_of_days), (date, num_of_days)}}}
     cad_prescription_taken_by_patient = pickle.load(
         open(os.path.join(args.pickles, 'cad_prescription_taken_by_patient.pkl'), 'rb'))
 
+    # taken from Cohort.csv
+    # patient_1stDX_date - first diagnosis encounter {patient_id: datetime},
+    # patient_start_date - date of insurance enrollment start {patient_id: datetime}
     patient_1stDX_date, patient_start_date = get_patient_init_date(args.input_data, args.pickles)
 
+    #? icd9, icd10 code to a patient_id with corresponding condition
     icd9_to_css = pickle.load(open(os.path.join(args.pickles, 'icd9_to_css.pkl'), 'rb'))
     icd10_to_css = pickle.load(open(os.path.join(args.pickles, 'icd10_to_css.pkl'), 'rb'))
 
     print('Preprocessing patient data...')
+
+    # drugs and patients to preserve for study
+    # 1. exclude patients whose index date (first day of prescription of any drug) prior to 1st DX
+    # 2. exclude patients who fail to constantly take the drug within 730 days (interval <= 90)
+    # 3. exclude patients whose baseline period (time before index date) is less than 365 days
     save_prescription, save_patient = exclude(cad_prescription_taken_by_patient, patient_1stDX_date,
                                                    patient_start_date, args.time_interval,
                                                    args.followup, args.baseline)
 
+    # if for any drug a number of users >= args.min_patients all those patients are added to a combined set of patients
     patient_list = get_patient_list(args.min_patients, save_prescription)
 
+    # for each drug return patient_ids with theirs prescriptions, that happend before that drug has been prescribed
+    # save_cohort_rx[drug][patient_id][date][drug1, drug2]
     save_cohort_rx = pre_user_cohort_rx_v2(save_prescription, save_patient, args.min_patients)
+
     save_cohort_dx = get_user_cohort_dx(args.input_data, save_prescription, icd9_to_css, icd10_to_css, args.min_patients, patient_list)
     save_cohort_demo = get_user_cohort_demo(args.input_data, patient_list)
 

@@ -1,6 +1,5 @@
 from datetime import datetime
 import pickle
-import pandas as pd
 
 
 def get_patient_init_date(indir, outdir):

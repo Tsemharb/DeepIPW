@@ -8,8 +8,7 @@ import torch.nn.functional as F
 from baselines import *
 import os
 from utils import save_model, load_model
-from sklearn.metrics import accuracy_score,roc_auc_score
-
+from sklearn.metrics import accuracy_score, roc_auc_score
 
 
 def parse_args():
@@ -17,7 +16,7 @@ def parse_args():
     parser.add_argument('--data_dir', type=str, default='../user_cohort/')
     parser.add_argument('--pickles_dir', type=str, default='pickles')
     parser.add_argument('--treated_drug_file', type=str)
-    parser.add_argument('--controlled_drug', choices=['ATC','random'], default='random')
+    parser.add_argument('--controlled_drug', choices=['ATC', 'random'], default='random')
     parser.add_argument('--controlled_drug_ratio', type=int, default=3)
     parser.add_argument("--random_seed", type=int, default=128)
     parser.add_argument('--batch_size', type=int, default=50)
@@ -35,7 +34,6 @@ def parse_args():
     args = parser.parse_args()
 
     return args
-
 
 
 def main(args):
@@ -62,10 +60,9 @@ def main(args):
             if n_control_patient >= (args.controlled_drug_ratio+1) * n_treat_patient:
                 break
 
-
     else:
-        ATC2DRUG = pickle.load(open(os.path.join(args.pickles_dir,'ATC2DRUG.pkl'), 'rb'))
-        DRUG2ATC = pickle.load(open(os.path.join(args.pickles_dir,'DRUG2ATC.pkl'), 'rb'))
+        ATC2DRUG = pickle.load(open(os.path.join(args.pickles_dir, 'ATC2DRUG.pkl'), 'rb'))
+        DRUG2ATC = pickle.load(open(os.path.join(args.pickles_dir, 'DRUG2ATC.pkl'), 'rb'))
 
         drug_atc = DRUG2ATC.get(args.treated_drug_file)
         atc_group = set()
@@ -73,11 +70,11 @@ def main(args):
             for drug in ATC2DRUG.get(atc):
                 atc_group.add(drug)
         if len(atc_group) > 1:
-            controlled_drugs_range = [drug+'.pkl' for drug in atc_group if drug !=args.treated_drug_file]
+            controlled_drugs_range = [drug+'.pkl' for drug in atc_group if drug != args.treated_drug_file]
         else:
             all_atc = set(ATC2DRUG.keys())-set(drug_atc)
-            sample_atc = [atc for atc in list(all_atc) if len(ATC2DRUG.get(atc))==1]
-            sample_drug  = set()
+            sample_atc = [atc for atc in list(all_atc) if len(ATC2DRUG.get(atc)) == 1]
+            sample_drug = set()
             for atc in sample_atc:
                 for drug in ATC2DRUG.get(atc):
                     sample_drug.add(drug)
@@ -160,18 +157,18 @@ def main(args):
     # lowest_n_unbalanced = float('inf')
     for epoch in range(args.epochs):
         epoch_losses_ipw = []
-        for confounder,treatment,outcome in tqdm(train_loader):
+        for confounder, treatment, outcome in tqdm(train_loader):
             model.train()
 
             # train IPW
             optimizer.zero_grad()
 
             if args.cuda:
-                confounder[0] =confounder[0].to('cuda')
+                confounder[0] = confounder[0].to('cuda')
                 confounder[1] = confounder[1].to('cuda')
                 confounder[2] = confounder[2].to('cuda')
                 confounder[3] = confounder[3].to('cuda')
-                treatment =treatment.to('cuda')
+                treatment = treatment.to('cuda')
 
             treatment_logits, _ = model(confounder)
             loss_ipw = F.binary_cross_entropy_with_logits(treatment_logits, treatment.float())
