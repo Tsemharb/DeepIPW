@@ -94,6 +94,8 @@ def drug_is_taken_in_baseline_v2(index_date, dates):
     return False
 
 
+# https://stackoverflow.com/questions/651794/whats-the-best-way-to-initialize-a-dict-of-dicts-in-python
+# https://en.wikipedia.org/wiki/Autovivification
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
     def __getitem__(self, item):

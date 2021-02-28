@@ -25,12 +25,16 @@ def get_user_dx(indir, patient_list, icd9_to_css, icd10_to_css):
 
         DATE_NAME = [col for col in inpat.columns if 'DATE' in col][0]
 
+        # delete patients not in patient_list
         inpat = inpat[inpat['ENROLID'].isin(list(patient_list))]
+        # remove rows with empty DATE_NAME values
         inpat = inpat[~inpat[DATE_NAME].isnull()]
 
+        # get DX columns
         DX_col = [col for col in inpat.columns if 'DX' in col]
 
         for index, row in tqdm(inpat.iterrows(), total=len(inpat)):
+            # get list of diagnoses
             dxs = list(row[DX_col])
             enrolid = row['ENROLID']
             date = row[DATE_NAME]
@@ -71,6 +75,8 @@ def pre_user_cohort_dx(user_dx, cad_prescription_taken_by_patient,min_patients):
                 date_codes = user_dx.get(patient)
                 for date, codes in date_codes.items():
                     date = datetime.strptime(date, '%m/%d/%Y')
+                    # date - dx_date; index_date - first prescription date of a drug
+                    # if diagnosis date < drug prescription date (prescribed after the diagnosis)
                     if date < index_date:
                         if drug not in user_cohort_dx:
                             user_cohort_dx[drug][patient][date] = set(codes)
@@ -98,6 +104,7 @@ class AutoVivification(dict):
 
 
 def get_user_cohort_dx(indir, cad_prescription_taken_by_patient, icd9_to_css, icd10_to_css, min_patient, patient_list):
+    # user_dx{patient_id:{date1:[list of diagnoses converted to ccs], date2:...}}
     user_dx = get_user_dx(indir, patient_list, icd9_to_css, icd10_to_css)
     return pre_user_cohort_dx(user_dx, cad_prescription_taken_by_patient, min_patient)
 

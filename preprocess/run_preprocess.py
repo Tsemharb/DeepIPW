@@ -52,7 +52,8 @@ def main(args):
     # patient_start_date - date of insurance enrollment start {patient_id: datetime}
     patient_1stDX_date, patient_start_date = get_patient_init_date(args.input_data, args.pickles)
 
-    #? icd9, icd10 code to a patient_id with corresponding condition
+    # icd9, icd10 code to ccs (clinical classification software) - typo in variable names (css)
+    # https://www.hcup-us.ahrq.gov/toolssoftware/ccs/AppendixASingleDX.txt
     icd9_to_css = pickle.load(open(os.path.join(args.pickles, 'icd9_to_css.pkl'), 'rb'))
     icd10_to_css = pickle.load(open(os.path.join(args.pickles, 'icd10_to_css.pkl'), 'rb'))
 
@@ -69,22 +70,29 @@ def main(args):
     # if for any drug a number of users >= args.min_patients all those patients are added to a combined set of patients
     patient_list = get_patient_list(args.min_patients, save_prescription)
 
-    # for each drug return patient_ids with theirs prescriptions, that happend before that drug has been prescribed
-    # save_cohort_rx[drug][patient_id][date][drug1, drug2]
+    # for each DRUG get patient_ids with any of theirs prescriptions, that happened before that DRUG has been prescribed
+    # save_cohort_rx[drug][patient_id][date][drug_id_1, drug_id_2]
     save_cohort_rx = pre_user_cohort_rx_v2(save_prescription, save_patient, args.min_patients)
 
+    # for each DRUG get patient_ids with all of theirs diagnosis (ccs), diagnosed before that DRUG has been prescribed
+    # save_cohort_dx[drug][patient_id][date][ccs_code_1, ccs_code_2]
     save_cohort_dx = get_user_cohort_dx(args.input_data, save_prescription, icd9_to_css, icd10_to_css, args.min_patients, patient_list)
+
+    # get cohort demographic info (date of birth, gender)
     save_cohort_demo = get_user_cohort_demo(args.input_data, patient_list)
 
     save_cohort_outcome = {}
     # Heart Failure
     codes9 = ['425', '428', '40201', '40211', '40291', '40401', '40403', '40411', '40413', '40491', '40493', 'K77']
     codes0 = ['I11', 'I13', 'I50', 'I42', 'K77']
-    save_cohort_outcome['heart-failure'] = pre_user_cohort_outcome(args.input_data,patient_list, codes9, codes0)
+    # heart failure patients:
+    # save_cohort_outcome{heart-failure:{patient_id:[dates of heart_failure dx], patient_id...}
+    save_cohort_outcome['heart-failure'] = pre_user_cohort_outcome(args.input_data, patient_list, codes9, codes0)
 
     # Stroke
     codes9 = ['4380', '4381', '4382', '4383', '4384', '4385', '4386', '4387', '4388', '4389', 'V1254']
     codes0 = ['Z8673', 'I60', 'I61', 'I62', 'I63', 'I64', 'I65', 'I66', 'I67', 'I68', 'I69', 'G458', 'G459']
+    # stroke patients
     save_cohort_outcome['stroke'] = pre_user_cohort_outcome(args.input_data,patient_list, codes9, codes0)
 
     print('Generating patient cohort...')
