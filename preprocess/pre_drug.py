@@ -2,7 +2,7 @@ import argparse
 from collections import defaultdict
 import pickle
 import numpy as np
-from datetime import datetime
+# from datetime import datetime
 import os
 
 
@@ -73,16 +73,16 @@ def pre_drug_table(args):
     return cad_prescription_taken_by_patient
 
 
-def drug_time_interval_is_valid(take_times, n_prescription, time_interval):
-    count = 0
-    dates = [datetime.strptime(pair[0], '%m/%d/%Y') for pair in take_times if pair[0] and pair[1]]
-    dates = sorted(dates)
-    for i in range(1, len(dates)):
-        if (dates[i] - dates[i - 1]).days >= time_interval:
-            count += 1
-        if count >= n_prescription:
-            return True
-    return False
+# def drug_time_interval_is_valid(take_times, n_prescription, time_interval):
+#     count = 0
+#     dates = [datetime.strptime(pair[0], '%m/%d/%Y') for pair in take_times if pair[0] and pair[1]]
+#     dates = sorted(dates)
+#     for i in range(1, len(dates)):
+#         if (dates[i] - dates[i - 1]).days >= time_interval:
+#             count += 1
+#         if count >= n_prescription:
+#             return True
+#     return False
 
 
 if __name__ == '__main__':

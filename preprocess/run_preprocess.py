@@ -1,6 +1,5 @@
 import argparse
 import os
-
 from utils import get_patient_init_date
 from pre_cohort import exclude
 from pre_cohort_rx import pre_user_cohort_rx_v2
@@ -43,13 +42,14 @@ def main(args):
 
     print('Loading prescription data...')
 
+    # pickle is generated from input table drug.csv (pre_drug.py)
     # default_dict of drugs of format {drug_id: {patient_id:{(date, num_of_days), (date, num_of_days)}}}
     cad_prescription_taken_by_patient = pickle.load(
         open(os.path.join(args.pickles, 'cad_prescription_taken_by_patient.pkl'), 'rb'))
 
     # taken from Cohort.csv
-    # patient_1stDX_date - first diagnosis encounter {patient_id: datetime},
-    # patient_start_date - date of insurance enrollment start {patient_id: datetime}
+    # patient_1stDX_date - first diagnosis encounter {patient_id: datetime} (index_date field in cohort.csv),
+    # patient_start_date - date of insurance enrollment start {patient_id: datetime} (DTSTART field in cohort.csv)
     patient_1stDX_date, patient_start_date = get_patient_init_date(args.input_data, args.pickles)
 
     # icd9, icd10 code to ccs (clinical classification software) - typo in variable names (css)
@@ -63,6 +63,7 @@ def main(args):
     # 1. exclude patients whose index date (first day of prescription of any drug) prior to 1st DX
     # 2. exclude patients who fail to constantly take the drug within 730 days (interval <= 90)
     # 3. exclude patients whose baseline period (time before index date) is less than 365 days
+    # save_prescription[drug][patient] = dates; save_patient[patient][drug] = dates;
     save_prescription, save_patient = exclude(cad_prescription_taken_by_patient, patient_1stDX_date,
                                                    patient_start_date, args.time_interval,
                                                    args.followup, args.baseline)
@@ -70,7 +71,8 @@ def main(args):
     # if for any drug a number of users >= args.min_patients all those patients are added to a combined set of patients
     patient_list = get_patient_list(args.min_patients, save_prescription)
 
-    # for each DRUG get patient_ids with any of theirs prescriptions, that happened before that DRUG has been prescribed
+    # for each DRUG get patient_ids with any of theirs prescriptions that happened before that DRUG has been prescribed
+    # basically all those drugs, for which we plan to emulate RCT
     # save_cohort_rx[drug][patient_id][date][drug_id_1, drug_id_2]
     save_cohort_rx = pre_user_cohort_rx_v2(save_prescription, save_patient, args.min_patients)
 
