@@ -1,0 +1,40 @@
+Preprocess drugs
+  Drugs info. All the drug that are taken by each patient from a cohort
+    -input drug.csv file...
+      ENROLID - patient identifier
+      NDCNUM  - drug ndc code
+      SVCDATE - date to take the prescription
+      DAYSUPP - days covered by the prescription
+
+     ... is turned into cad_prescription_taken_by_patient.pkl (pre_drug.py script) of the following format:
+       # data format: {drug_id (RxNorm Ing code):
+       #                   {{patient_id:
+       #                       ((take_date, take_days), (take_date, take_days),...)},
+       #                   {patient_id:
+       #                       ((take_date, take_days), (take_date, take_days),...)},...},
+       #               {drug_id:
+       #                   {{patient_id:
+       #                       ((take_date, take_days), (take_date, take_days),...)},
+       #                   {patient_id:
+       #                       ((take_date, take_days), (take_date, take_days),...)},...},...}
+
+
+Preprocess patient cohort
+    - input cohort.csv - CAD cohort
+          ENROLID    - patient identifier
+          index_date - the day of first CAD identifier
+          DTSTART    - date of insurance enrollment start
+          DTEND      - date of insurance enrollment end
+    - inpatient.csv - all inpatient diagnoses of a patient
+          ENROLID    - patient identifier
+          DX1 - DX15 - icd9 codes
+          ADMDATE    - Admission date for this inpatient visit
+          DAYS       - The number of days stay in the inpatient hospital
+    - outpatient.csv
+          ENROLID   - patient identifier
+          DX1 - DX4 - icd9 codes
+          SVCDATE   - Service date for this outpatient visit
+    - demo.csv
+          ENROLID - patient identifier
+          DOBYR   - date of birth
+          SEX     - 1-male, 2-female
